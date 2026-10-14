@@ -63,9 +63,7 @@ services:
   # BACKEND MICROSERVICES (Zero public ports - bounded JVM Memory -Xmx384m)
   # ============================================================================
   auth-service:
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bebongcute19-gif/projectmd5-auth-service:${IMAGE_TAG:-latest}
     container_name: nexus-auth-prod
     restart: always
     environment:
@@ -81,9 +79,7 @@ services:
       - backend-network
 
   product-service:
-    build:
-      context: ./product-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bebongcute19-gif/projectmd5-product-service:${IMAGE_TAG:-latest}
     container_name: nexus-product-prod
     restart: always
     environment:
@@ -99,9 +95,7 @@ services:
       - backend-network
 
   order-service:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bebongcute19-gif/projectmd5-order-service:${IMAGE_TAG:-latest}
     container_name: nexus-order-prod
     restart: always
     environment:
@@ -127,9 +121,7 @@ services:
       - backend-network
 
   payment-service:
-    build:
-      context: ./payment-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bebongcute19-gif/projectmd5-payment-service:${IMAGE_TAG:-latest}
     container_name: nexus-payment-prod
     restart: always
     environment:
@@ -150,9 +142,7 @@ services:
       - backend-network
 
   notification-service:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bebongcute19-gif/projectmd5-notification-service:${IMAGE_TAG:-latest}
     container_name: nexus-notification-prod
     restart: always
     environment:
@@ -176,9 +166,7 @@ services:
   # PUBLIC FACING SERVICES (Bound to 127.0.0.1 for Host Nginx Reverse Proxy / SSL)
   # ============================================================================
   api-gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+    image: ghcr.io/bebongcute19-gif/projectmd5-api-gateway:${IMAGE_TAG:-latest}
     container_name: nexus-gateway-prod
     restart: always
     ports:
@@ -202,9 +190,7 @@ services:
       - backend-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/bebongcute19-gif/projectmd5-frontend:${IMAGE_TAG:-latest}
     container_name: nexus-frontend-prod
     restart: always
     ports:

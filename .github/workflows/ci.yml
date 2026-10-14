@@ -13,6 +13,7 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   # 1) Biên dịch + chạy test (nếu có) cho từng service Java.
@@ -80,3 +81,41 @@ jobs:
           cp .env.production.example .env
           docker compose -f docker-compose.prod.yml --env-file .env config -q
           echo "docker-compose.prod.yml hợp lệ"
+
+  # 4) Publish Docker images to GHCR when on main branch (push only, not PR)
+  publish-images:
+    name: Publish images to GHCR
+    needs: [docker-build, compose-validate]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - product-service
+          - order-service
+          - payment-service
+          - notification-service
+          - frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ghcr.io/bebongcute19-gif/projectmd5-${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}

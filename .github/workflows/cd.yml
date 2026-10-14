@@ -1,15 +1,7 @@
+
 name: CD
 
-# Deploy lên VPS bằng SSH.
-# - Tự động: mỗi khi CI trên nhánh main chạy XONG VÀ THÀNH CÔNG.
-# - Thủ công: nút "Run workflow" ở tab Actions.
 on:
-  workflow_dispatch:
-    inputs:
-      deploy_all:
-        description: "Build lại TẤT CẢ service (chậm, tốn RAM)"
-        type: boolean
-        default: false
   workflow_run:
     workflows: ["CI"]
     types: [completed]
@@ -24,75 +16,198 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to VPS
+    name: Deploy ProjectMD5 to VPS
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    if: >-
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      }}
+
     steps:
-      - name: Cấu hình SSH
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Configure SSH and verify VPS fingerprint
         env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST_FINGERPRINT: ${{ secrets.VPS_HOST_FINGERPRINT }}
         run: |
+          set -euo pipefail
+
+          if [ -z "$VPS_HOST" ] || [ -z "$VPS_SSH_KEY" ]; then
+            echo "Missing VPS_HOST or VPS_SSH_KEY" >&2
+            exit 1
+          fi
+
+          if [ -z "$VPS_HOST_FINGERPRINT" ]; then
+            echo "Missing VPS_HOST_FINGERPRINT" >&2
+            exit 1
+          fi
+
           install -m 700 -d ~/.ssh
+
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Deploy
+          tmpfile=$(mktemp)
+          trap 'rm -f "$tmpfile"' EXIT
+
+          ssh-keyscan -T 10 -t rsa "$VPS_HOST" \
+            > "$tmpfile" 2>/dev/null
+
+          if [ ! -s "$tmpfile" ]; then
+            echo "Cannot retrieve VPS RSA host key" >&2
+            exit 1
+          fi
+
+          host_fp=$(
+            ssh-keygen -lf "$tmpfile" -E sha256 |
+            awk '{print $2}'
+          )
+
+          if [ "$host_fp" != "$VPS_HOST_FINGERPRINT" ]; then
+            echo "VPS host fingerprint mismatch" >&2
+            exit 1
+          fi
+
+          cat "$tmpfile" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Check VPS deployment directory
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          DEPLOY_ALL: ${{ inputs.deploy_all }}
         run: |
-          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=30 "$VPS_USER@$VPS_HOST" \
-            "DEPLOY_ALL=${DEPLOY_ALL:-false} bash -s" <<'REMOTE'
           set -euo pipefail
-          cd /opt/omnichannel
-          F="-f docker-compose.prod.yml -f docker-compose.lowmem.yml --env-file .env"
-          SERVICES="auth-service product-service order-service payment-service notification-service api-gateway frontend"
 
-          OLD=$(git rev-parse HEAD)
-          git pull --ff-only origin main
-          NEW=$(git rev-parse HEAD)
-          echo "Commit: $OLD -> $NEW"
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "test -d /opt/projectmd5 &&
+             test -w /opt/projectmd5 &&
+             test -s /opt/projectmd5/.env &&
+             test -s /opt/projectmd5/scripts/init-databases.sql"
 
-          CHANGED=$(git diff --name-only "$OLD" "$NEW" | cut -d/ -f1 | sort -u)
-          TO_BUILD=""
-          for s in $SERVICES; do
-            if [ "$DEPLOY_ALL" = "true" ] || echo "$CHANGED" | grep -qx "$s"; then
-              TO_BUILD="$TO_BUILD $s"
-            fi
-          done
+      - name: Upload production Compose
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
 
-          # VPS chỉ có 1GB RAM nên build TUẦN TỰ từng service.
-          for s in $TO_BUILD; do
-            echo "=== Build $s ==="
-            docker compose $F build "$s"
-            docker compose $F up -d --no-deps "$s"
-            sleep 45
-          done
+          scp -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            docker-compose.prod.yml \
+            "$VPS_USER@$VPS_HOST:/opt/projectmd5/docker-compose.prod.yml"
 
-          if echo "$CHANGED" | grep -q '^docker-compose'; then
-            echo "=== File compose đổi: cập nhật cấu hình ==="
-            docker compose $F up -d
+      - name: Upload deployment image tag
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          if ! printf '%s' "$IMAGE_TAG" |
+            grep -Eq '^[a-fA-F0-9]{40}$'; then
+            echo "Invalid commit SHA" >&2
+            exit 1
           fi
 
-          if [ -z "$TO_BUILD" ] && ! echo "$CHANGED" | grep -q '^docker-compose'; then
-            echo "Không có service nào thay đổi, không cần deploy."
+          printf '%s\n' "$IMAGE_TAG" | ssh \
+            -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "cat > /opt/projectmd5/.deploy-image-tag"
+
+      - name: Deploy ProjectMD5
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 \
+            "$VPS_USER@$VPS_HOST" "bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd /opt/projectmd5
+
+          if [ ! -s .env ]; then
+            echo "ERROR: Missing production .env" >&2
+            exit 1
           fi
 
-          # Health check: chờ tối đa 3 phút.
-          for i in $(seq 1 18); do
-            if curl -fsS http://127.0.0.1:8080/api/v1/products/health >/dev/null; then
-              echo "Health check OK"
-              docker compose $F ps
-              docker image prune -f >/dev/null
-              docker builder prune -f >/dev/null
+          if [ ! -s scripts/init-databases.sql ]; then
+            echo "ERROR: Missing database initialization script" >&2
+            exit 1
+          fi
+
+          if [ ! -s .deploy-image-tag ]; then
+            echo "ERROR: Missing deployment image tag" >&2
+            exit 1
+          fi
+
+          IMAGE_TAG=$(cat .deploy-image-tag)
+
+          if ! printf '%s' "$IMAGE_TAG" |
+            grep -Eq '^[a-fA-F0-9]{40}$'; then
+            echo "ERROR: Invalid image tag" >&2
+            exit 1
+          fi
+
+          export IMAGE_TAG
+
+          COMPOSE=(
+            docker compose
+            -p projectmd5
+            --env-file .env
+            -f docker-compose.prod.yml
+          )
+
+          echo "Validating Docker Compose..."
+          "${COMPOSE[@]}" config --quiet
+
+          echo "Pulling Docker images..."
+          "${COMPOSE[@]}" pull
+
+          echo "Starting ProjectMD5..."
+          "${COMPOSE[@]}" up -d --no-build
+
+          echo "Checking containers..."
+          "${COMPOSE[@]}" ps
+
+          GATEWAY_PORT=$(
+            sed -n 's/^GATEWAY_PORT=//p' .env | tail -n 1
+          )
+          GATEWAY_PORT=${GATEWAY_PORT:-8080}
+
+          echo "Waiting for API Gateway..."
+
+          for i in $(seq 1 24); do
+            if curl -fsS \
+              "http://127.0.0.1:${GATEWAY_PORT}/actuator/health" \
+              >/dev/null; then
+              echo "Gateway health check OK"
               exit 0
             fi
             sleep 10
           done
-          echo "Health check THẤT BẠI"
-          docker compose $F ps
+
+          echo "Gateway health check FAILED" >&2
+          "${COMPOSE[@]}" ps
           exit 1
           REMOTE
