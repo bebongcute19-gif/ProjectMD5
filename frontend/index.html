@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUS TECH | Omnichannel Microservices Platform</title>
+  <meta name="description" content="Hệ thống Thương mại Điện tử Đa kênh chuẩn Doanh nghiệp theo kiến trúc Microservices với Redis Distributed Lock chống Race Condition và Saga Pattern RabbitMQ.">
+  <link rel="stylesheet" href="css/style.css?v=20261013_3">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="brand" onclick="switchTab('storefront')">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-text">
+        <h1>NEXUS TECH</h1>
+        <span>Omnichannel Microservices</span>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <button class="nav-link active" onclick="switchTab('storefront')">
+        <span>🛍️</span> Cửa Hàng
+      </button>
+      <button class="nav-link admin-only" id="nav-benchmark-btn" onclick="switchTab('concurrency-lab')">
+        <span>🔥</span> Benchmark Race Condition
+      </button>
+      <button class="nav-link" onclick="switchTab('saga-monitor')">
+        <span>🔄</span> Saga & Microservices
+      </button>
+      <button class="nav-link" onclick="switchTab('orders-tab')">
+        <span>📦</span> Đơn Hàng
+      </button>
+      <button class="nav-link" onclick="switchTab('notifications-tab')">
+        <span>🔔</span> Thông Báo (<span id="notif-count-badge">0</span>)
+      </button>
+    </nav>
+
+    <div class="nav-actions">
+      <div class="user-badge" id="user-badge-btn" onclick="toggleAuthModal()">
+        <div class="user-avatar" id="user-avatar-initial">A</div>
+        <span id="user-name-display">Demo Customer</span>
+      </div>
+      <button class="cart-btn" id="open-cart-btn" onclick="toggleCartDrawer()">
+        🛒
+        <div class="cart-count" id="cart-item-count">0</div>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+
+    <!-- ======================================================================
+         TAB 1: STOREFRONT & FLASH SALE
+         ====================================================================== -->
+    <section id="tab-storefront" class="tab-pane active">
+      
+      <!-- Hero Flash Sale Banner -->
+      <div class="flashsale-banner">
+        <div class="flash-hero-content">
+          <div class="flash-badge">⚡ FLASH SALE CHỊU TẢI CAO (10 SUẤT DUY NHẤT)</div>
+          <h2 class="flash-title">iPhone 16 Pro Max 256GB Desert Titanium</h2>
+          <p class="flash-desc">Sản phẩm thử nghiệm chịu tải đồng thời: Giới hạn duy nhất 10 chiếc trong kho. Hệ thống sử dụng Redis Distributed Lock đảm bảo không bao giờ bị âm kho khi hàng trăm người cùng bấm mua!</p>
+          
+          <div class="flash-pricing">
+            <span class="price-current">19.990.000₫</span>
+            <span class="price-original">34.990.000₫</span>
+            <span class="step-badge async">-43%</span>
+          </div>
+
+          <div class="flash-stock-wrap">
+            <div class="stock-labels">
+              <span>Tồn kho thời gian thực (Redis Lock)</span>
+              <span id="hero-stock-count">10 / 10 cái</span>
+            </div>
+            <div class="stock-meter-bg">
+              <div class="stock-meter-fill" id="hero-stock-bar" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-flash btn-lg" onclick="buyHeroFlashSale()">
+              ⚡ MUA NGAY FLASH SALE
+            </button>
+            <button class="btn btn-secondary btn-lg admin-only" onclick="switchTab('concurrency-lab')">
+              🧪 Thử Nghiệm 500 Luồng Đồng Thời (Admin)
+            </button>
+          </div>
+
+          <div class="countdown-box">
+            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Sự kiện kết thúc sau:</span>
+            <div class="time-digit" id="timer-hours">02</div> :
+            <div class="time-digit" id="timer-mins">45</div> :
+            <div class="time-digit" id="timer-secs">18</div>
+          </div>
+        </div>
+
+        <div class="flash-hero-img-wrap">
+          <div class="flash-hero-img" role="img" aria-label="Hero product illustration">
+            <!-- Hero product image populated from product-card or state.heroProduct. Hidden until a valid src is set. -->
+            <img id="hero-product-img" alt="Hero product image" style="display: none;" onerror="this.dataset.broken='1'; this.style.display='none';" />
+
+            <!-- Fallback SVG preserved; will be hidden when real image is available -->
+            <svg width="100%" height="100%" viewBox="0 0 400 320" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#2563EB"/>
+                  <stop offset="100%" stop-color="#38BDF8"/>
+                </linearGradient>
+              </defs>
+              <rect x="40" y="20" rx="24" ry="24" width="220" height="280" fill="url(#g1)" opacity="0.95"/>
+              <rect x="60" y="40" rx="12" ry="12" width="180" height="240" fill="#0B1220" opacity="0.9"/>
+              <g fill="#fff" opacity="0.9" transform="translate(80,60)">
+                <rect x="0" y="0" rx="6" width="120" height="18" fill="#ffffff" opacity="0.08"/>
+                <rect x="0" y="30" rx="6" width="100" height="14" fill="#ffffff" opacity="0.06"/>
+                <rect x="0" y="56" rx="6" width="110" height="14" fill="#ffffff" opacity="0.06"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Catalog Controls -->
+      <div class="catalog-toolbar">
+        <div class="category-chips">
+          <button class="chip-btn active" onclick="filterCatalog('all', this)">Tất Cả Sản Phẩm</button>
+          <button class="chip-btn" onclick="filterCatalog('flash', this)">🔥 Flash Sale</button>
+          <button class="chip-btn" onclick="filterCatalog('smartphones', this)">📱 Điện Thoại</button>
+          <button class="chip-btn" onclick="filterCatalog('laptops', this)">💻 Laptop</button>
+          <button class="chip-btn" onclick="filterCatalog('audio', this)">🎧 Âm Thanh</button>
+          <button class="chip-btn" onclick="filterCatalog('accessories', this)">⌚ Phụ Kiện</button>
+        </div>
+
+        <div class="search-box">
+          <span style="margin-right: 0.5rem; opacity: 0.6;">🔍</span>
+          <input type="text" id="catalog-search-input" placeholder="Tìm kiếm sản phẩm..." onkeyup="handleSearch(this.value)">
+        </div>
+      </div>
+
+      <!-- Product Cards Grid -->
+      <div class="products-grid" id="products-grid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TAB 2: CONCURRENCY BENCHMARK & RACE CONDITION LAB
+         ====================================================================== -->
+    <section id="tab-concurrency-lab" class="tab-pane">
+      <div class="lab-header">
+        <h2 class="lab-title">🧪 Flash Sale High-Concurrency Lab</h2>
+        <p class="lab-subtitle">Mô phỏng 100 đến 500 khách hàng cùng bấm nút mua cùng 1 phần nghìn giây cho 1 sản phẩm chỉ có 10 chiếc. Chứng minh tính ưu việt của <strong>Redis Distributed Lock</strong> chống tình trạng Race Condition (âm kho) chuẩn doanh nghiệp.</p>
+      </div>
+
+      <div class="lab-grid">
+        <!-- Control Panel -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">⚙️ Cấu Hình Mô Phỏng Đặt Hàng</h3>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-benchmark-stock" onclick="resetInventoryStock()">
+              🔄 Reset Kho về 10 Cái
+            </button>
+          </div>
+
+          <div class="concurrency-controls">
+            <div class="control-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <label class="control-label" for="benchmark-product-select">Sản phẩm kiểm thử:</label>
+                <button type="button" class="btn btn-secondary btn-xs" onclick="selectRandomBenchmarkProduct()" title="Chọn ngẫu nhiên một sản phẩm bất kỳ trên sàn để kiểm thử">
+                  🎲 Chọn Ngẫu Nhiên
+                </button>
+              </div>
+              <div class="custom-select-wrap" style="position: relative; width: 100%;">
+                <select id="benchmark-product-select" class="custom-select" style="width: 100%; background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; padding: 0.8rem 2.8rem 0.8rem 1rem; font-size: 0.92rem; font-weight: 600; cursor: pointer; outline: none; -webkit-appearance: none; appearance: none;" onchange="handleBenchmarkProductChange(this.value)">
+                  <option value="1" selected>#1 - iPhone 16 Pro Max 256GB Desert Titanium (Flash Sale | 19.990.000₫)</option>
+                  <option value="2">#2 - Samsung Galaxy S24 Ultra 512GB Titanium Gray (31.990.000₫)</option>
+                  <option value="3">#3 - MacBook Pro 14 M3 Pro 18GB/512GB Space Black (49.990.000₫)</option>
+                  <option value="4">#4 - Sony WH-1000XM5 Chống Ồn Đầu Bảng (7.990.000₫)</option>
+                  <option value="5">#5 - Apple Watch Ultra 2 GPS + Cellular 49mm (21.990.000₫)</option>
+                  <option value="6">#6 - iPad Pro M4 11 inch 256GB Wi-Fi Space Black (27.990.000₫)</option>
+                  <option value="7">#7 - Bàn Phím Cơ Keychron Q1 Pro QMK/VIA Carbon (4.690.000₫)</option>
+                  <option value="8">#8 - Chuột Công Thái Học Logitech MX Master 3S (2.390.000₫)</option>
+                  <option value="9">#9 - Loa Di Động Marshall Stanmore III Bluetooth (9.490.000₫)</option>
+                  <option value="10">#10 - Tai Nghe Apple AirPods Pro 2 USB-C MagSafe (5.490.000₫)</option>
+                  <option value="11">#11 - Laptop Gaming Asus ROG Zephyrus G16 OLED (58.990.000₫)</option>
+                  <option value="12">#12 - Màn Hình Dell UltraSharp 27 4K U2723QE (14.290.000₫)</option>
+                  <option value="13">#13 - Xiaomi 14 Ultra 512GB Leica Photography (29.990.000₫)</option>
+                  <option value="14">#14 - Tay Cầm Không Dây Sony DualSense Edge PS5 (4.990.000₫)</option>
+                </select>
+                <span class="custom-select-arrow" style="position: absolute; right: 1.1rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--accent-primary); font-size: 0.85rem;">▼</span>
+              </div>
+              <div id="benchmark-selected-product-info" class="benchmark-product-preview" style="margin-top: 0.5rem; padding: 0.6rem 0.9rem; background: rgba(0, 0, 0, 0.25); border-radius: 6px; border: 1px dashed rgba(255, 255, 255, 0.15); font-size: 0.82rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <span>Tồn kho hiện tại: <strong style="color: var(--success);">10 cái</strong></span>
+                <span>Giá test: <strong style="color: var(--accent-primary);">19.990.000₫</strong></span>
+                <span>Mã SKU: <code>IPHONE-16-PM-256</code></span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label">Chọn số lượng luồng gửi đồng thời (Concurrent Threads):</label>
+              <div class="btn-group-toggle">
+                <button class="toggle-btn" onclick="setConcurrency(20, this)">20 Luồng</button>
+                <button class="toggle-btn active" onclick="setConcurrency(50, this)">50 Luồng</button>
+                <button class="toggle-btn" onclick="setConcurrency(100, this)">100 Luồng</button>
+                <button class="toggle-btn" onclick="setConcurrency(200, this)">200 Luồng</button>
+              </div>
+            </div>
+
+            <div style="margin-top: 1rem;">
+              <button class="btn btn-flash btn-lg" id="run-benchmark-btn" style="width: 100%;" onclick="runLiveConcurrencyBenchmark()">
+                🚀 KHỞI CHẠY TEST TẢI ĐỒNG THỜI NGAY
+              </button>
+            </div>
+
+            <div id="benchmark-lock-hint" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.9rem; font-size: 0.82rem; color: #a7f3d0;">
+              🛡️ <strong>Cơ chế bảo vệ:</strong> Mỗi request gửi đến Order Service sẽ cố gắng acquire <code>SETNX lock:inventory:1 [UUID] PX 5000</code>. Chỉ có thread giữ Lock mới được trừ tồn kho trong DB bằng <code>SELECT ... FOR UPDATE</code>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics Display -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3 class="panel-title">📊 Kết Quả Kiểm Thử Thực Tế</h3>
+            <span class="step-badge saga" id="lock-status-badge">Redis Lock: SẴN SÀNG</span>
+          </div>
+
+          <div class="metric-cards-grid">
+            <div class="metric-card">
+              <div class="metric-val emerald" id="stat-successful-orders">0</div>
+              <div class="metric-title" id="stat-successful-title">Đơn hàng thành công</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val rose" id="stat-rejected-orders">0</div>
+              <div class="metric-title">Bị từ chối vì hết hàng</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val indigo" id="stat-remaining-stock">10</div>
+              <div class="metric-title" id="stat-remaining-title">Tồn kho còn lại trong DB</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val amber" id="stat-oversold-count">0</div>
+              <div class="metric-title">Số sản phẩm bị Âm Kho (Oversold)</div>
+            </div>
+          </div>
+
+          <div class="panel-header" style="margin-bottom: 0.5rem;">
+            <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Nhật ký thực thi (Live Engine Logs):</span>
+            <button class="btn btn-secondary btn-sm" onclick="clearConsoleLog()">Xóa Log</button>
+          </div>
+          <div class="console-terminal" id="benchmark-terminal">
+            <div class="console-line info">[SẴN SÀNG] Hệ thống đã nạp kịch bản kiểm thử tải đồng thời.</div>
+            <div class="console-line info">[KHO HÀNG] Tồn kho sản phẩm #1 hiện tại: 10 cái. Bấm 'Khởi Chạy' để bắt đầu!</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TAB 3: SAGA & MICROSERVICES TOPOLOGY MONITOR
+         ====================================================================== -->
+    <section id="tab-saga-monitor" class="tab-pane">
+      <div class="lab-header">
+        <h2 class="lab-title">🔄 Saga Pattern & Distributed Transactions</h2>
+        <p class="lab-subtitle">Minh họa cơ chế điều phối giao dịch phân tán (Choreography Saga) qua RabbitMQ giữa <strong>Order Service</strong> và <strong>Payment Service</strong> cùng hành động bồi hoàn khi thanh toán thất bại.</p>
+      </div>
+
+      <!-- Saga Flow Steps -->
+      <div class="topology-flow">
+        <div class="flow-step-card">
+          <div class="step-number">1</div>
+          <div class="step-info">
+            <h4>Khách hàng tạo đơn hàng (Order Creation)</h4>
+            <p>API Gateway -> Order Service: Tạo đơn hàng trạng thái <strong>PENDING</strong>, đồng thời khóa và giữ kho bằng <strong>Redis Distributed Lock</strong>.</p>
+          </div>
+          <span class="step-badge sync">HTTP / REST</span>
+        </div>
+
+        <div class="flow-step-card">
+          <div class="step-number">2</div>
+          <div class="step-info">
+            <h4>Phát sự kiện OrderCreatedEvent lên RabbitMQ</h4>
+            <p>Order Service gửi event tới Topic Exchange <code>ecommerce.exchange</code> (Routing Key: <code>order.created</code>). Notification Service và Payment Service tự động nhận diện.</p>
+          </div>
+          <span class="step-badge async">RabbitMQ Topic</span>
+        </div>
+
+        <div class="flow-step-card">
+          <div class="step-number">3</div>
+          <div class="step-info">
+            <h4>Xử lý thanh toán cổng VNPay Sandbox (Payment Step)</h4>
+            <p>Payment Service nhận event và tạo giao dịch thanh toán. Người dùng xác nhận thanh toán thành công hoặc giả lập hủy/thất bại.</p>
+          </div>
+          <span class="step-badge saga">Payment Gateway</span>
+        </div>
+
+        <div class="flow-step-card">
+          <div class="step-number">4</div>
+          <div class="step-info">
+            <h4>Hành động Bù (Compensating Transaction) nếu Thanh toán Thất bại</h4>
+            <p>Nếu thanh toán bị hủy -> Payment Service phát <code>payment.failed</code> -> Order Service tự động <strong>HOÀN TRẢ TỒN KHO</strong> và chuyển đơn sang <strong>CANCELLED</strong>.</p>
+          </div>
+          <span class="step-badge async" style="border-color: var(--danger); color: var(--danger);">Saga Rollback</span>
+        </div>
+      </div>
+
+      <!-- Service Health Matrix -->
+      <div class="glass-panel" style="margin-top: 2rem;">
+        <div class="panel-header">
+          <h3 class="panel-title">🌐 Giám Sát Trạng Thái Microservices</h3>
+          <button class="btn btn-secondary btn-sm" onclick="checkAllServicesHealth()">
+            🔄 Kiểm Tra Kết Nối (Ping)
+          </button>
+        </div>
+        <div class="services-matrix" id="services-health-matrix">
+          <div class="service-health-card" id="ping-gateway">
+            <div class="service-meta">
+              <h5>API Gateway</h5>
+              <span>Port 8080</span>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-health-card" id="ping-auth">
+            <div class="service-meta">
+              <h5>Auth Service</h5>
+              <span>Port 8081</span>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-health-card" id="ping-product">
+            <div class="service-meta">
+              <h5>Product Service</h5>
+              <span>Port 8082</span>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-health-card" id="ping-order">
+            <div class="service-meta">
+              <h5>Order Service</h5>
+              <span>Port 8083</span>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-health-card" id="ping-payment">
+            <div class="service-meta">
+              <h5>Payment Service</h5>
+              <span>Port 8084</span>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-health-card" id="ping-notification">
+            <div class="service-meta">
+              <h5>Notification Service</h5>
+              <span>Port 8085</span>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TAB 4: ORDERS & PAYMENT ACTIONS
+         ====================================================================== -->
+    <section id="tab-orders-tab" class="tab-pane">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">📦 Quản Lý Đơn Hàng & Thử Nghiệm Thanh Toán</h3>
+          <button class="btn btn-secondary btn-sm" onclick="loadOrderHistory()">
+            🔄 Làm Mới Đơn Hàng
+          </button>
+        </div>
+        <div class="orders-table-wrap">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Mã Đơn</th>
+                <th>Khách Hàng</th>
+                <th>Sản Phẩm</th>
+                <th>Tổng Tiền</th>
+                <th>Trạng Thái</th>
+                <th>Thời Gian</th>
+                <th>Hành Động Saga</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted);">Đang tải danh sách đơn hàng...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TAB 5: NOTIFICATIONS FEED
+         ====================================================================== -->
+    <section id="tab-notifications-tab" class="tab-pane">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">🔔 Nhật Ký Thông Báo (RabbitMQ Event Stream)</h3>
+          <button class="btn btn-secondary btn-sm" onclick="loadNotifications()">
+            🔄 Làm Mới
+          </button>
+        </div>
+        <div id="notifications-feed-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Cart Drawer -->
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3 style="font-family: var(--font-heading); font-size: 1.25rem;">🛒 Giỏ Hàng</h3>
+      <button class="modal-close" style="position: static;" onclick="toggleCartDrawer()">✕</button>
+    </div>
+    <div class="cart-drawer-body" id="cart-drawer-items">
+      <p style="color: var(--text-muted); text-align: center; margin-top: 3rem;">Giỏ hàng của bạn đang trống!</p>
+    </div>
+    <div class="cart-drawer-footer">
+      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">
+        <span>Tổng cộng:</span>
+        <span id="cart-total-price" style="color: var(--accent-primary);">0₫</span>
+      </div>
+      <button class="btn btn-primary btn-lg" style="width: 100%;" onclick="checkoutCart()">
+        Thanh Toán Đơn Hàng
+      </button>
+    </div>
+  </aside>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="toggleAuthModal()">✕</button>
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;">Đăng Nhập Tài Khoản</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Đăng nhập để nhận JWT Token bảo vệ trên API Gateway.</p>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="control-group">
+          <label class="control-label">Email:</label>
+          <input type="email" id="auth-email-input" value="customer@ecommerce.com" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: #fff; padding: 0.75rem; border-radius: var(--radius-sm); outline: none;">
+        </div>
+        <div class="control-group">
+          <label class="control-label">Mật khẩu:</label>
+          <input type="password" id="auth-password-input" value="Customer@123" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: #fff; padding: 0.75rem; border-radius: var(--radius-sm); outline: none;">
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary" style="flex: 1;" onclick="handleLoginSubmit()">Đăng Nhập</button>
+          <button class="btn btn-secondary" onclick="fillAdminAccount()">Admin</button>
+          <button class="btn btn-secondary" onclick="fillCustomerAccount()">Khách Hàng</button>
+          <button class="btn btn-danger btn-sm" onclick="handleLogout()">Đăng Xuất</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/app.js?v=20261013_4"></script>
+
+  <!-- Hero image helper: copy product image from rendered product-card or state.heroProduct into hero area. Fallback to SVG if missing. -->
+  <script>
+    (function() {
+      function applyHero() {
+        try {
+          const heroImg = document.getElementById('hero-product-img');
+          const fallbackSvg = document.querySelector('.flash-hero-img svg');
+          if (!heroImg) return false;
+
+          // 1) Prefer state.heroProduct.imageUrl if available
+          if (window.state && window.state.heroProduct && window.state.heroProduct.imageUrl) {
+            heroImg.src = window.state.heroProduct.imageUrl;
+            heroImg.style.display = 'block';
+            if (fallbackSvg) fallbackSvg.style.display = 'none';
+            return true;
+          }
+
+          // 2) Otherwise, pick image from product-card #1 rendered by renderProductsGrid
+          const prodImg = document.querySelector('#product-card-1 .product-img');
+          if (prodImg && prodImg.src) {
+            heroImg.src = prodImg.src;
+            heroImg.style.display = 'block';
+            if (fallbackSvg) fallbackSvg.style.display = 'none';
+            return true;
+          }
+        } catch (e) {
+          // silent
+        }
+        return false;
+      }
+
+      let attempts = 0;
+      const iv = setInterval(() => {
+        attempts++;
+        const ok = applyHero();
+        if (ok || attempts > 30) {
+          clearInterval(iv);
+        }
+      }, 300);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+{
+  "users": [
+    {
+      "email": "admin@ecommerce.com",
+      "password": "Admin@123",
+      "fullName": "Hệ Thống Admin (Quản Trị)",
+      "phone": "0987654321",
+      "role": "ADMIN"
+    },
+    {
+      "email": "customer@ecommerce.com",
+      "password": "Customer@123",
+      "fullName": "Nguyễn Văn A (Khách Hàng Thân Thiết)",
+      "phone": "0912345678",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "customerB@ecommerce.com",
+      "password": "Customer@123",
+      "fullName": "Trần Thị Bích (Khách Hàng VIP)",
+      "phone": "0988888888",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "le.van.cuong@gmail.com",
+      "password": "Customer@123",
+      "fullName": "Lê Văn Cường",
+      "phone": "0901234567",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "pham.thi.dung@gmail.com",
+      "password": "Customer@123",
+      "fullName": "Phạm Thị Dung",
+      "phone": "0912345679",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "hoang.duc.em@gmail.com",
+      "password": "Customer@123",
+      "fullName": "Hoàng Đức Em",
+      "phone": "0923456780",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "vu.thi.giang@gmail.com",
+      "password": "Customer@123",
+      "fullName": "Vũ Thị Giang",
+      "phone": "0934567891",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "dang.minh.hai@gmail.com",
+      "password": "Customer@123",
+      "fullName": "Đặng Minh Hải",
+      "phone": "0945678902",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "bui.thanh.in@gmail.com",
+      "password": "Customer@123",
+      "fullName": "Bùi Thanh In",
+      "phone": "0956789013",
+      "role": "CUSTOMER"
+    },
+    {
+      "email": "ngo.quoc.khanh@gmail.com",
+      "password": "Customer@123",
+      "fullName": "Ngô Quốc Khánh",
+      "phone": "0967890124",
+      "role": "CUSTOMER"
+    }
+  ],
+  "products": [
+    {
+      "name": "iPhone 16 Pro Max 256GB Desert Titanium (Flash Sale)",
+      "sku": "IPHONE-16-PM-256",
+      "slug": "iphone-16-pro-max-256gb",
+      "description": "Siêu phẩm điện thoại cao cấp nhất của Apple với chip A18 Pro, nút Camera Control và khung viền Titan siêu nhẹ. Dành cho sự kiện Flash Sale chịu tải cao!",
+      "price": 34990000,
+      "originalPrice": 37990000,
+      "stock": 10,
+      "categorySlug": "smartphones",
+      "imageUrl": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=800&q=80",
+      "flashSale": true,
+      "flashSalePrice": 19990000
+    },
+    {
+      "name": "Samsung Galaxy S24 Ultra 512GB Titanium Gray",
+      "sku": "SAMS-S24U-512",
+      "slug": "samsung-galaxy-s24-ultra",
+      "description": "Galaxy AI quyền năng, camera 200MP zoom quang 5x cùng bút S-Pen tích hợp.",
+      "price": 31990000,
+      "originalPrice": 35490000,
+      "stock": 50,
+      "categorySlug": "smartphones",
+      "imageUrl": "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=800&q=80",
+      "flashSale": true,
+      "flashSalePrice": 27990000
+    },
+    {
+      "name": "MacBook Pro 14 M3 Pro 18GB/512GB Space Black",
+      "sku": "MBP-14-M3PRO",
+      "slug": "macbook-pro-14-m3-pro",
+      "description": "Đỉnh cao hiệu năng đồ họa và lập trình với chip Apple M3 Pro, màn hình Liquid Retina XDR 120Hz.",
+      "price": 49990000,
+      "originalPrice": 52990000,
+      "stock": 25,
+      "categorySlug": "laptops",
+      "imageUrl": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
+      "flashSale": false,
+      "flashSalePrice": null
+    },
+    {
+      "name": "Sony WH-1000XM5 Chống Ồn Đầu Bảng",
+      "sku": "SONY-WH1000XM5",
+      "slug": "sony-wh-1000xm5",
+      "description": "Chống ồn chủ động hàng đầu ngành, thời lượng pin 30 giờ, âm thanh Hi-Res LDAC.",
+      "price": 7990000,
+      "originalPrice": 8990000,
+      "stock": 100,
+      "categorySlug": "audio",
+      "imageUrl": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+      "flashSale": true,
+      "flashSalePrice": 6490000
+    },
+    {
+      "name": "Apple Watch Ultra 2 GPS + Cellular 49mm Titanium",
+      "sku": "AW-ULTRA-2-49",
+      "slug": "apple-watch-ultra-2",
+      "description": "Đồng hồ thể thao bền bỉ nhất, định vị GPS kép chính xác, màn hình 3000 nits.",
+      "price": 21490000,
+      "originalPrice": 22990000,
+      "stock": 40,
+      "categorySlug": "accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
+      "flashSale": false,
+      "flashSalePrice": null
+    },
+    {
+      "name": "iPad Pro M4 11 inch 256GB Wi-Fi Space Black",
+      "sku": "IPAD-PRO-M4-11",
+      "slug": "ipad-pro-m4-11-inch",
+      "description": "Màn hình OLED Ultra Retina XDR đỉnh cao, độ mỏng chỉ 5.3mm với sức mạnh bứt phá từ chip Apple M4.",
+      "price": 27990000,
+      "originalPrice": 29990000,
+      "stock": 35,
+      "categorySlug": "laptops",
+      "imageUrl": "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80",
+      "flashSale": true,
+      "flashSalePrice": 24990000
+    },
+    {
+      "name": "Bàn Phím Cơ Không Dây Keychron Q1 Pro QMK/VIA Carbon",
+      "sku": "KEYCHRON-Q1-PRO",
+      "slug": "ban-phim-co-keychron-q1-pro",
+      "description": "Vỏ nhôm CNC nguyên khối, kết nối Bluetooth 5.1 & Type-C, hot-swap toàn bộ switch, hỗ trợ tùy biến QMK/VIA.",
+      "price": 4590000,
+      "originalPrice": 4990000,
+      "stock": 60,
+      "categorySlug": "accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+      "flashSale": false,
+      "flashSalePrice": null
+    },
+    {
+      "name": "Chuột Công Thái Học Logitech MX Master 3S Pale Grey",
+      "sku": "LOGI-MX-MASTER-3S",
+      "slug": "chuot-logitech-mx-master-3s",
+      "description": "Cảm biến 8000 DPI theo dõi trên mọi bề mặt kể cả mặt kính, nút bấm Quiet Clicks êm ái, cuộn siêu tốc MagSpeed.",
+      "price": 2490000,
+      "originalPrice": 2890000,
+      "stock": 80,
+      "categorySlug": "accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80",
+      "flashSale": true,
+      "flashSalePrice": 1990000
+    },
+    {
+      "name": "Loa Di Động Cao Cấp Marshall Stanmore III Bluetooth",
+      "sku": "MARSHALL-STANMORE-3",
+      "slug": "loa-marshall-stanmore-iii",
+      "description": "Chất âm sống động tràn ngập không gian phòng khách, thiết kế vintage hoài cổ đặc trưng của thương hiệu Marshall.",
+      "price": 9990000,
+      "originalPrice": 10990000,
+      "stock": 30,
+      "categorySlug": "audio",
+      "imageUrl": "https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=800&q=80",
+      "flashSale": false,
+      "flashSalePrice": null
+    },
+    {
+      "name": "Tai Nghe Apple AirPods Pro 2 USB-C MagSafe",
+      "sku": "AIRPODS-PRO-2-USBC",
+      "slug": "apple-airpods-pro-2-usbc",
+      "description": "Chống ồn chủ động gấp 2 lần, âm thanh thích ứng tự động điều chỉnh theo môi trường và chuẩn sạc Type-C hiện đại.",
+      "price": 5990000,
+      "originalPrice": 6490000,
+      "stock": 75,
+      "categorySlug": "audio",
+      "imageUrl": "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=800&q=80",
+      "flashSale": true,
+      "flashSalePrice": 4890000
+    },
+    {
+      "name": "Laptop Gaming Asus ROG Zephyrus G16 OLED Core Ultra 9",
+      "sku": "ASUS-ROG-G16-OLED",
+      "slug": "asus-rog-zephyrus-g16-oled",
+      "description": "Màn hình OLED 2.5K 240Hz sắc nét đỉnh cao, trang bị Intel Core Ultra 9 185H và card đồ họa NVIDIA RTX 4080.",
+      "price": 69990000,
+      "originalPrice": 74990000,
+      "stock": 15,
+      "categorySlug": "laptops",
+      "imageUrl": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=800&q=80",
+      "flashSale": false,
+      "flashSalePrice": null
+    },
+    {
+      "name": "Màn Hình Chuyên Đồ Họa Dell UltraSharp 27 4K U2723QE",
+      "sku": "DELL-U2723QE-4K",
+      "slug": "man-hinh-dell-ultrasharp-27-4k",
+      "description": "Tấm nền IPS Black độ tương phản 2000:1, chuẩn màu 98% DCI-P3, cổng kết nối USB-C Hub truyền dữ liệu và sạc 90W.",
+      "price": 13990000,
+      "originalPrice": 15490000,
+      "stock": 45,
+      "categorySlug": "accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
+      "flashSale": false,
+      "flashSalePrice": null
+    },
+    {
+      "name": "Xiaomi 14 Ultra 512GB Leica Photography Kit",
+      "sku": "XIAOMI-14-ULTRA",
+      "slug": "xiaomi-14-ultra-512gb",
+      "description": "Hệ thống 4 camera quang học Leica cảm biến 1-inch biến thiên khẩu độ, quay video 8K chuyên nghiệp.",
+      "price": 28990000,
+      "originalPrice": 32990000,
+      "stock": 20,
+      "categorySlug": "smartphones",
+      "imageUrl": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80",
+      "flashSale": true,
+      "flashSalePrice": 23990000
+    },
+    {
+      "name": "Tay Cầm Chơi Game Không Dây Sony DualSense Edge PS5",
+      "sku": "SONY-DUALSENSE-EDGE",
+      "slug": "tay-cam-ps5-dualsense-edge",
+      "description": "Tay cầm Pro cao cấp cho game thủ với cần analog có thể thay thế, nút gạt phía sau tùy biến và hành trình cò có thể chỉnh.",
+      "price": 4990000,
+      "originalPrice": 5490000,
+      "stock": 50,
+      "categorySlug": "accessories",
+      "imageUrl": "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=800&q=80",
+      "flashSale": false,
+      "flashSalePrice": null
+    }
+  ]
+}

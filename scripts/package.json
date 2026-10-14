@@ -1,0 +1,9 @@
+{
+  "name": "pm5-playwright-fetch",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.43.0"
+  }
+}

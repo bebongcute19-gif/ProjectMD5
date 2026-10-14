@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 0219be10-d83c-45fd-8eb8-98983992f33e
+
+localResources:
+  collections:
+    - ../Omnichannel_Ecommerce_Platform.postman_collection.json

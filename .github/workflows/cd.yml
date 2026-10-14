@@ -1,0 +1,98 @@
+name: CD
+
+# Deploy lên VPS bằng SSH.
+# - Tự động: mỗi khi CI trên nhánh main chạy XONG VÀ THÀNH CÔNG.
+# - Thủ công: nút "Run workflow" ở tab Actions.
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: "Build lại TẤT CẢ service (chậm, tốn RAM)"
+        type: boolean
+        default: false
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Cấu hình SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          DEPLOY_ALL: ${{ inputs.deploy_all }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=30 "$VPS_USER@$VPS_HOST" \
+            "DEPLOY_ALL=${DEPLOY_ALL:-false} bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd /opt/omnichannel
+          F="-f docker-compose.prod.yml -f docker-compose.lowmem.yml --env-file .env"
+          SERVICES="auth-service product-service order-service payment-service notification-service api-gateway frontend"
+
+          OLD=$(git rev-parse HEAD)
+          git pull --ff-only origin main
+          NEW=$(git rev-parse HEAD)
+          echo "Commit: $OLD -> $NEW"
+
+          CHANGED=$(git diff --name-only "$OLD" "$NEW" | cut -d/ -f1 | sort -u)
+          TO_BUILD=""
+          for s in $SERVICES; do
+            if [ "$DEPLOY_ALL" = "true" ] || echo "$CHANGED" | grep -qx "$s"; then
+              TO_BUILD="$TO_BUILD $s"
+            fi
+          done
+
+          # VPS chỉ có 1GB RAM nên build TUẦN TỰ từng service.
+          for s in $TO_BUILD; do
+            echo "=== Build $s ==="
+            docker compose $F build "$s"
+            docker compose $F up -d --no-deps "$s"
+            sleep 45
+          done
+
+          if echo "$CHANGED" | grep -q '^docker-compose'; then
+            echo "=== File compose đổi: cập nhật cấu hình ==="
+            docker compose $F up -d
+          fi
+
+          if [ -z "$TO_BUILD" ] && ! echo "$CHANGED" | grep -q '^docker-compose'; then
+            echo "Không có service nào thay đổi, không cần deploy."
+          fi
+
+          # Health check: chờ tối đa 3 phút.
+          for i in $(seq 1 18); do
+            if curl -fsS http://127.0.0.1:8080/api/v1/products/health >/dev/null; then
+              echo "Health check OK"
+              docker compose $F ps
+              docker image prune -f >/dev/null
+              docker builder prune -f >/dev/null
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Health check THẤT BẠI"
+          docker compose $F ps
+          exit 1
+          REMOTE

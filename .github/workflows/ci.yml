@@ -1,0 +1,82 @@
+name: CI
+
+# Chạy mỗi khi push lên main hoặc mở Pull Request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # 1) Biên dịch + chạy test (nếu có) cho từng service Java.
+  build-java:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - product-service
+          - order-service
+          - payment-service
+          - notification-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: ${{ matrix.service }}/pom.xml
+      - name: Maven verify
+        working-directory: ${{ matrix.service }}
+        run: mvn -B -ntp verify
+
+  # 2) Kiểm tra từng Dockerfile build được (không push image đi đâu).
+  docker-build:
+    name: Docker ${{ matrix.service }}
+    needs: build-java
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - product-service
+          - order-service
+          - payment-service
+          - notification-service
+          - frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: false
+          tags: omnichannel-${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # 3) Kiểm tra cú pháp docker-compose production với file env mẫu.
+  compose-validate:
+    name: Validate compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose.prod.yml
+        run: |
+          cp .env.production.example .env
+          docker compose -f docker-compose.prod.yml --env-file .env config -q
+          echo "docker-compose.prod.yml hợp lệ"

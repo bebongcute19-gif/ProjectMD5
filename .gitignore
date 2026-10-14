@@ -1,0 +1,43 @@
+# Environment variables & secrets
+.env
+.env.local
+.env.production
+
+# IDE & Editor settings
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Maven build artifacts
+target/
+**/target/
+*.jar
+*.war
+
+# Node / Frontend build artifacts
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.npm
+npm-debug.log*
+
+# OS specific files
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# Environment files
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
